@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ประวัติคิว - Queue Close</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="app">
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <div class="sidebar__logo">Q</div>
+      <div>
+        <div class="sidebar__title">Queue Close</div>
+        <div class="sidebar__subtitle">จุดรับ P1</div>
+      </div>
+    </div>
+    <nav class="sidebar__nav">
+      <a href="/" class="nav-link">
+        <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        คิววันนี้
+      </a>
+      <a href="/history" class="nav-link active">
+        <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        ประวัติ / ย้อนหลัง
+      </a>
+    </nav>
+    <div class="sidebar__footer">ค้นหาย้อนหลังตามช่วงวันที่</div>
+  </aside>
+
+  <div class="mobile-header">
+    <div class="mobile-header__brand">
+      <div class="sidebar__logo" style="width:32px;height:32px;font-size:0.9rem">Q</div>
+      Queue Close
+    </div>
+  </div>
+
+  <div class="app-main">
+    <header class="page-header">
+      <div class="page-header__left">
+        <h1>ประวัติ / ย้อนหลัง</h1>
+        <p>ค้นหาและแก้ไขข้อมูลคิวย้อนหลัง</p>
+      </div>
+    </header>
+
+    <main class="content">
+      <div id="error" class="alert alert--error hidden"></div>
+
+      <div class="filter-panel">
+        <p class="filter-panel__title">ตัวกรอง</p>
+        <div class="filter-grid">
+          <label class="field">
+            <span class="field__label">จากวันที่</span>
+            <input class="field__input" type="date" id="date-from">
+          </label>
+          <label class="field">
+            <span class="field__label">ถึงวันที่</span>
+            <input class="field__input" type="date" id="date-to">
+          </label>
+          <label class="field">
+            <span class="field__label">สถานะ</span>
+            <select class="field__input" id="status-filter">
+              <option value="all">ทั้งหมด</option>
+              <option value="open">ยังไม่ปิดจบ</option>
+              <option value="closed">ปิดจบแล้ว</option>
+            </select>
+          </label>
+          <button id="btn-search" class="btn btn-primary" type="button">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            ค้นหา
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-row" style="grid-template-columns: repeat(2, minmax(0, 1fr))">
+        <div class="stat-card">
+          <div class="stat-card__label">จำนวนรายการ</div>
+          <div class="stat-card__value stat-card__value--accent" id="count">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">อัปเดตล่าสุด</div>
+          <div class="stat-card__value" style="font-size:1.1rem" id="last-update">-</div>
+        </div>
+      </div>
+
+      <div class="table-panel">
+        <div class="table-panel__scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>เลขคิว</th>
+                <th>ทะเบียนรถ</th>
+                <th>ลูกค้า</th>
+                <th>สถานะ</th>
+                <th>เวลาเข้า</th>
+                <th>เวลาออก</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr><td colspan="7" class="empty-state">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="history-list" class="queue-list history-cards"></div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav">
+    <a href="/" class="nav-link">
+      <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      คิววันนี้
+    </a>
+    <a href="/history" class="nav-link active">
+      <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      ประวัติ
+    </a>
+  </nav>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/edit-modal.js"></script>
+  <script src="/js/history.js"></script>
+</body>
+</html>
