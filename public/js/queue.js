@@ -126,5 +126,14 @@ async function handleClose(e) {
 
 btnRefresh.addEventListener('click', loadQueue);
 
-loadQueue();
-timer = setInterval(loadQueue, REFRESH_INTERVAL);
+requireCurrentUser()
+  .then(() => {
+    loadQueue();
+    timer = setInterval(loadQueue, REFRESH_INTERVAL);
+  })
+  .catch((err) => {
+    if (err.message !== 'missing currentUser') {
+      showAuthGate(err.message || 'ตรวจสอบพนักงานไม่สำเร็จ');
+    }
+  });
+

@@ -3,7 +3,9 @@ const express = require('express');
 const path = require('path');
 const os = require('os');
 const queueRoutes = require('./src/routes/queue');
-const { testConnection } = require('./src/db');
+const authRoutes = require('./src/routes/auth');
+const { testConnection, ensureLogTable } = require('./src/db');
+const { testHrConnection } = require('./src/hrDb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,9 +14,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Placeholder for future auth middleware
-// app.use('/api', requireAuth);
-
+app.use('/api/auth', authRoutes);
 app.use('/api/queue', queueRoutes);
 
 app.get('/', (req, res) => {
@@ -28,9 +28,18 @@ app.get('/history', (req, res) => {
 async function start() {
   try {
     await testConnection();
-    console.log('Database connected successfully');
+    await ensureLogTable();
+    console.log('Queue database connected successfully');
   } catch (err) {
-    console.error('Database connection failed:', err.message || err);
+    console.error('Queue database connection failed:', err.message || err);
+    process.exit(1);
+  }
+
+  try {
+    await testHrConnection();
+    console.log('HR database connected successfully');
+  } catch (err) {
+    console.error('HR database connection failed:', err.message || err);
     process.exit(1);
   }
 

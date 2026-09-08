@@ -10,9 +10,17 @@ const statusFilter = document.getElementById('status-filter');
 
 let historyRows = [];
 
+function formatClosedBy(row) {
+  if (!row.ClosedByName && !row.ClosedByCode) return '-';
+  if (row.ClosedByName && row.ClosedByCode) {
+    return `${row.ClosedByName} (${row.ClosedByCode})`;
+  }
+  return row.ClosedByName || row.ClosedByCode;
+}
+
 function renderTableRows(rows) {
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="7">${renderEmptyState('ไม่พบข้อมูล', 'ลองเปลี่ยนช่วงวันที่หรือสถานะ')}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8">${renderEmptyState('ไม่พบข้อมูล', 'ลองเปลี่ยนช่วงวันที่หรือสถานะ')}</td></tr>`;
     return;
   }
 
@@ -27,6 +35,7 @@ function renderTableRows(rows) {
           <td><span class="${status.badgeClass}">${escapeHtml(status.text)}</span></td>
           <td>${escapeHtml(formatTime(row.VisitTime))}</td>
           <td>${escapeHtml(formatTime(row.OutTime))}</td>
+          <td>${escapeHtml(formatClosedBy(row))}</td>
           <td class="actions">
             <button class="btn btn-secondary btn-sm btn-edit" type="button">แก้ไข</button>
           </td>
@@ -49,6 +58,7 @@ function renderCardRows(rows) {
   listEl.innerHTML = rows
     .map((row, index) => {
       const status = formatStatus(row.visit_Status, row.OutTime);
+      const closedBy = formatClosedBy(row);
       return `
         <article class="queue-card" data-index="${index}">
           <div class="queue-card__left">
@@ -61,6 +71,7 @@ function renderCardRows(rows) {
               <div class="queue-card__extra">
                 <span>เข้า ${escapeHtml(formatTime(row.VisitTime))}</span>
                 <span>ออก ${escapeHtml(formatTime(row.OutTime))}</span>
+                <span><strong>ผู้ปิดจบ</strong> ${escapeHtml(closedBy)}</span>
               </div>
               ${renderCustomerExtra(row)}
             </div>
@@ -122,4 +133,10 @@ btnSearch.addEventListener('click', loadHistory);
 dateFrom.value = todayISO();
 dateTo.value = todayISO();
 
-loadHistory();
+requireCurrentUser()
+  .then(() => loadHistory())
+  .catch((err) => {
+    if (err.message !== 'missing currentUser') {
+      showAuthGate(err.message || 'ตรวจสอบพนักงานไม่สำเร็จ');
+    }
+  });

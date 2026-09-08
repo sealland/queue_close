@@ -850,3 +850,121 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── User chip / auth gate ── */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  margin-right: 0.35rem;
+}
+
+.user-chip__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-text);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.user-chip__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-chip__code {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+
+.user-chip--mobile {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  margin-right: 0;
+}
+
+.user-chip--mobile .user-chip__code {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.user-chip--mobile .user-chip__avatar {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.auth-gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 40%),
+    var(--color-bg);
+}
+
+.auth-gate__card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.auth-gate__logo {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 1rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.auth-gate__card h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.auth-gate__card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.auth-gate__hint {
+  margin-top: 1rem !important;
+  font-size: 0.82rem !important;
+}
+
+.auth-gate__hint code {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-text);
+}
+

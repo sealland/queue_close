@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop queue-close",
+    "pm2:restart": "pm2 restart queue-close",
+    "pm2:logs": "pm2 logs queue-close"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

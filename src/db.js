@@ -61,9 +61,33 @@ let pool = null;
 
 async function getPool() {
   if (!pool) {
-    pool = await sql.connect(buildConfig());
+    pool = new sql.ConnectionPool(buildConfig());
+    await pool.connect();
   }
   return pool;
+}
+
+async function ensureLogTable() {
+  const db = await getPool();
+  await db.request().query(`
+    IF OBJECT_ID(N'dbo.tbl_queue_close_log', N'U') IS NULL
+    BEGIN
+      CREATE TABLE dbo.tbl_queue_close_log (
+        id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        action NVARCHAR(30) NOT NULL,
+        emp_code NVARCHAR(50) NOT NULL,
+        emp_name NVARCHAR(200) NULL,
+        SEQ NVARCHAR(10) NULL,
+        Ship_point NVARCHAR(10) NULL,
+        WADAT_IST DATE NULL,
+        detail NVARCHAR(MAX) NULL,
+        created_at DATETIME NOT NULL CONSTRAINT DF_tbl_queue_close_log_created_at DEFAULT (GETDATE())
+      );
+
+      CREATE INDEX IX_tbl_queue_close_log_close
+        ON dbo.tbl_queue_close_log (action, SEQ, Ship_point, WADAT_IST, created_at DESC);
+    END
+  `);
 }
 
 function getQueueFilters() {
@@ -75,60 +99,72 @@ function getQueueFilters() {
 
 const BASE_SELECT = `
   SELECT
-    SEQ,
-    Ship_point,
-    CONVERT(varchar(10), WADAT_IST, 23) AS WADAT_IST,
-    RIGHT(SEQ, 3) AS QueueNo,
-    CARLICENSE,
-    CAR_PROVINCE,
-    AR_NAME,
-    Telephone,
-    SalesReason,
-    visit_Status,
-    CONVERT(varchar(19), VisitTime, 120) AS VisitTime,
-    CONVERT(varchar(19), OutTime, 120) AS OutTime
-  FROM tbl_shipment_carvisit
+    t.SEQ,
+    t.Ship_point,
+    CONVERT(varchar(10), t.WADAT_IST, 23) AS WADAT_IST,
+    RIGHT(t.SEQ, 3) AS QueueNo,
+    t.CARLICENSE,
+    t.CAR_PROVINCE,
+    t.AR_NAME,
+    t.Telephone,
+    t.SalesReason,
+    t.visit_Status,
+    CONVERT(varchar(19), t.VisitTime, 120) AS VisitTime,
+    CONVERT(varchar(19), t.OutTime, 120) AS OutTime,
+    closer.emp_code AS ClosedByCode,
+    closer.emp_name AS ClosedByName,
+    CONVERT(varchar(19), closer.created_at, 120) AS ClosedAt
+  FROM tbl_shipment_carvisit t
+  OUTER APPLY (
+    SELECT TOP 1 l.emp_code, l.emp_name, l.created_at
+    FROM tbl_queue_close_log l
+    WHERE l.action = N'close'
+      AND l.SEQ = t.SEQ
+      AND l.Ship_point = t.Ship_point
+      AND CAST(l.WADAT_IST AS DATE) = CAST(t.WADAT_IST AS DATE)
+    ORDER BY l.created_at DESC
+  ) closer
 `;
 
 function baseWhereClause() {
   return `
-    Ship_point = @shipPoint
-    AND LEFT(SEQ, 1) = @queuePrefix
-    AND ISNULL(DOCTYPE, '') <> N'จัดสาย'
+    t.Ship_point = @shipPoint
+    AND LEFT(t.SEQ, 1) = @queuePrefix
+    AND ISNULL(t.DOCTYPE, '') <> N'จัดสาย'
   `;
 }
 
 async function getTodayQueue() {
-  const pool = await getPool();
+  const db = await getPool();
   const { shipPoint, queuePrefix } = getQueueFilters();
 
-  const result = await pool
+  const result = await db
     .request()
     .input('shipPoint', sql.NVarChar(10), shipPoint)
     .input('queuePrefix', sql.NVarChar(1), queuePrefix)
     .query(`
       ${BASE_SELECT}
       WHERE ${baseWhereClause()}
-        AND OutTime IS NULL
-        AND CAST(VisitTime AS DATE) = CAST(GETDATE() AS DATE)
-      ORDER BY VisitTime ASC
+        AND t.OutTime IS NULL
+        AND CAST(t.VisitTime AS DATE) = CAST(GETDATE() AS DATE)
+      ORDER BY t.VisitTime ASC
     `);
 
   return result.recordset;
 }
 
 async function getHistory({ status, dateFrom, dateTo }) {
-  const pool = await getPool();
+  const db = await getPool();
   const { shipPoint, queuePrefix } = getQueueFilters();
 
   let statusClause = '';
   if (status === 'open') {
-    statusClause = 'AND OutTime IS NULL';
+    statusClause = 'AND t.OutTime IS NULL';
   } else if (status === 'closed') {
-    statusClause = 'AND OutTime IS NOT NULL';
+    statusClause = 'AND t.OutTime IS NOT NULL';
   }
 
-  const result = await pool
+  const result = await db
     .request()
     .input('shipPoint', sql.NVarChar(10), shipPoint)
     .input('queuePrefix', sql.NVarChar(1), queuePrefix)
@@ -137,18 +173,18 @@ async function getHistory({ status, dateFrom, dateTo }) {
     .query(`
       ${BASE_SELECT}
       WHERE ${baseWhereClause()}
-        AND CAST(VisitTime AS DATE) BETWEEN @dateFrom AND @dateTo
+        AND CAST(t.VisitTime AS DATE) BETWEEN @dateFrom AND @dateTo
         ${statusClause}
-      ORDER BY VisitTime ASC
+      ORDER BY t.VisitTime ASC
     `);
 
   return result.recordset;
 }
 
 async function closeQueue({ seq, ship_point, wadat_ist }) {
-  const pool = await getPool();
+  const db = await getPool();
 
-  const result = await pool
+  const result = await db
     .request()
     .input('seq', sql.NVarChar(10), seq)
     .input('ship_point', sql.NVarChar(10), ship_point)
@@ -166,9 +202,9 @@ async function closeQueue({ seq, ship_point, wadat_ist }) {
 }
 
 async function updateQueue({ seq, ship_point, wadat_ist, carlicense, ar_name, telephone, sales_reason }) {
-  const pool = await getPool();
+  const db = await getPool();
 
-  const result = await pool
+  const result = await db
     .request()
     .input('seq', sql.NVarChar(10), seq)
     .input('ship_point', sql.NVarChar(10), ship_point)
@@ -191,19 +227,50 @@ async function updateQueue({ seq, ship_point, wadat_ist, carlicense, ar_name, te
   return result.rowsAffected[0];
 }
 
+async function insertTransactionLog({
+  action,
+  emp_code,
+  emp_name,
+  seq = null,
+  ship_point = null,
+  wadat_ist = null,
+  detail = null,
+}) {
+  const db = await getPool();
+  const detailText = detail == null ? null : typeof detail === 'string' ? detail : JSON.stringify(detail);
+
+  await db
+    .request()
+    .input('action', sql.NVarChar(30), action)
+    .input('emp_code', sql.NVarChar(50), emp_code)
+    .input('emp_name', sql.NVarChar(200), emp_name || null)
+    .input('seq', sql.NVarChar(10), seq)
+    .input('ship_point', sql.NVarChar(10), ship_point)
+    .input('wadat_ist', sql.Date, wadat_ist)
+    .input('detail', sql.NVarChar(sql.MAX), detailText)
+    .query(`
+      INSERT INTO tbl_queue_close_log
+        (action, emp_code, emp_name, SEQ, Ship_point, WADAT_IST, detail)
+      VALUES
+        (@action, @emp_code, @emp_name, @seq, @ship_point, @wadat_ist, @detail)
+    `);
+}
+
 async function testConnection() {
-  const pool = await getPool();
-  const result = await pool.request().query('SELECT 1 AS ok');
+  const db = await getPool();
+  const result = await db.request().query('SELECT 1 AS ok');
   return result.recordset[0].ok === 1;
 }
 
 module.exports = {
   sql,
   getPool,
+  ensureLogTable,
   getTodayQueue,
   getHistory,
   closeQueue,
   updateQueue,
+  insertTransactionLog,
   testConnection,
   getQueueFilters,
 };

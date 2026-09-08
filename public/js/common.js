@@ -81,8 +81,122 @@ function hideError(el) {
   el.classList.add('hidden');
 }
 
-async function apiFetch(url, options) {
-  const res = await fetch(url, options);
+const CURRENT_USER_KEY = 'queue_close_current_user';
+let currentEmployee = null;
+
+function getCurrentUserCode() {
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = (params.get('currentUser') || '').trim();
+  if (fromUrl) {
+    sessionStorage.setItem(CURRENT_USER_KEY, fromUrl);
+    return fromUrl;
+  }
+  return (sessionStorage.getItem(CURRENT_USER_KEY) || '').trim();
+}
+
+function withCurrentUser(url) {
+  const code = getCurrentUserCode();
+  if (!code) return url;
+  const u = new URL(url, window.location.origin);
+  u.searchParams.set('currentUser', code);
+  return u.pathname + u.search + u.hash;
+}
+
+function syncNavLinks() {
+  document.querySelectorAll('a.nav-link').forEach((a) => {
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('http')) return;
+    a.setAttribute('href', withCurrentUser(href));
+  });
+}
+
+function formatEmployeeDisplayName(name) {
+  if (!name) return '-';
+  // Pattern: (ชื่อเล่น) ชื่อ นามสกุล → ตัด (ชื่อเล่น) ออก
+  return String(name)
+    .replace(/^\s*\([^)]*\)\s*/, '')
+    .trim() || String(name).trim();
+}
+
+function renderUserChip() {
+  const actions = document.querySelector('.page-header__actions');
+  const mobileHeader = document.querySelector('.mobile-header');
+  if (!currentEmployee) return;
+
+  const displayName = formatEmployeeDisplayName(currentEmployee.emp_name);
+  const initial = displayName.charAt(0) || '?';
+
+  const chipHtml = `
+    <div class="user-chip" title="${escapeHtml(displayName)}">
+      <div class="user-chip__avatar">${escapeHtml(initial)}</div>
+      <div class="user-chip__meta">
+        <div class="user-chip__name">${escapeHtml(displayName)}</div>
+      </div>
+    </div>
+  `;
+
+  if (actions && !document.getElementById('user-chip')) {
+    const wrap = document.createElement('div');
+    wrap.id = 'user-chip';
+    wrap.innerHTML = chipHtml;
+    actions.prepend(wrap.firstElementChild);
+  }
+
+  if (mobileHeader && !document.getElementById('user-chip-mobile')) {
+    const wrap = document.createElement('div');
+    wrap.id = 'user-chip-mobile';
+    wrap.innerHTML = chipHtml.replace('user-chip', 'user-chip user-chip--mobile');
+    mobileHeader.appendChild(wrap.firstElementChild);
+  }
+}
+
+function showAuthGate(message) {
+  document.body.innerHTML = `
+    <div class="auth-gate">
+      <div class="auth-gate__card">
+        <div class="auth-gate__logo">Q</div>
+        <h1>ต้องระบุรหัสพนักงาน</h1>
+        <p>${escapeHtml(message)}</p>
+        <p class="auth-gate__hint">เปิดลิงก์แบบ<br><code>?currentUser=รหัสพนักงาน</code></p>
+      </div>
+    </div>
+  `;
+}
+
+async function requireCurrentUser() {
+  const code = getCurrentUserCode();
+  if (!code) {
+    showAuthGate('ไม่พบ parameter currentUser — ไม่สามารถใช้งานระบบได้');
+    throw new Error('missing currentUser');
+  }
+
+  syncNavLinks();
+
+  // Keep currentUser visible in URL
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('currentUser') !== code) {
+    url.searchParams.set('currentUser', code);
+    window.history.replaceState({}, '', url.pathname + url.search);
+  }
+
+  const me = await apiFetch(`/api/auth/me?currentUser=${encodeURIComponent(code)}`);
+  currentEmployee = {
+    emp_code: me.emp_code,
+    emp_name: me.emp_name,
+  };
+  renderUserChip();
+  return currentEmployee;
+}
+
+async function apiFetch(url, options = {}) {
+  const code = getCurrentUserCode();
+  const headers = new Headers(options.headers || {});
+  if (code) headers.set('X-Current-User', code);
+  if (options.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const res = await fetch(url, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;

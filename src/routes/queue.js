@@ -4,9 +4,11 @@ const {
   getHistory,
   closeQueue,
   updateQueue,
+  insertTransactionLog,
   testConnection,
   getQueueFilters,
 } = require('../db');
+const { requireEmployee } = require('../middleware/requireEmployee');
 
 const router = express.Router();
 
@@ -19,9 +21,17 @@ router.get('/health', async (req, res) => {
   }
 });
 
+router.use(requireEmployee);
+
 router.get('/today', async (req, res) => {
   try {
     const rows = await getTodayQueue();
+    await insertTransactionLog({
+      action: 'view_today',
+      emp_code: req.employee.emp_code,
+      emp_name: req.employee.emp_name,
+      detail: { count: rows.length },
+    });
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -41,6 +51,12 @@ router.get('/history', async (req, res) => {
     }
 
     const rows = await getHistory({ status, dateFrom, dateTo });
+    await insertTransactionLog({
+      action: 'view_history',
+      emp_code: req.employee.emp_code,
+      emp_name: req.employee.emp_name,
+      detail: { status, dateFrom, dateTo, count: rows.length },
+    });
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -60,6 +76,15 @@ router.post('/close', async (req, res) => {
     if (affected === 0) {
       return res.status(404).json({ error: 'Record not found or already closed' });
     }
+
+    await insertTransactionLog({
+      action: 'close',
+      emp_code: req.employee.emp_code,
+      emp_name: req.employee.emp_name,
+      seq,
+      ship_point,
+      wadat_ist,
+    });
 
     res.json({ ok: true });
   } catch (err) {
@@ -88,6 +113,16 @@ router.post('/update', async (req, res) => {
     if (affected === 0) {
       return res.status(404).json({ error: 'Record not found' });
     }
+
+    await insertTransactionLog({
+      action: 'update',
+      emp_code: req.employee.emp_code,
+      emp_name: req.employee.emp_name,
+      seq,
+      ship_point,
+      wadat_ist,
+      detail: { carlicense, ar_name, telephone, sales_reason },
+    });
 
     res.json({ ok: true });
   } catch (err) {
