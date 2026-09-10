@@ -13,6 +13,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3032,
         HOST: '0.0.0.0',
+        BASE_PATH: '/queue-close',
       },
     },
   ],

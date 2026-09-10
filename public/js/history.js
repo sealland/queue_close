@@ -135,8 +135,6 @@ dateTo.value = todayISO();
 
 requireCurrentUser()
   .then(() => loadHistory())
-  .catch((err) => {
-    if (err.message !== 'missing currentUser') {
-      showAuthGate(err.message || 'ตรวจสอบพนักงานไม่สำเร็จ');
-    }
+  .catch(() => {
+    showAuthGate();
   });

@@ -84,6 +84,24 @@ function hideError(el) {
 const CURRENT_USER_KEY = 'queue_close_current_user';
 let currentEmployee = null;
 
+function getBasePath() {
+  if (typeof window !== 'undefined' && window.__BASE_PATH__ != null) {
+    return String(window.__BASE_PATH__).replace(/\/+$/, '');
+  }
+  return '';
+}
+
+function appPath(url) {
+  if (!url || /^https?:\/\//i.test(url)) return url;
+  const [pathPart, query] = String(url).split('?');
+  let path = pathPart.startsWith('/') ? pathPart : `/${pathPart}`;
+  const base = getBasePath();
+  if (base && (path === base || path.startsWith(`${base}/`))) {
+    return `${path}${query ? `?${query}` : ''}`;
+  }
+  return `${base}${path}${query ? `?${query}` : ''}`;
+}
+
 function getCurrentUserCode() {
   const params = new URLSearchParams(window.location.search);
   const fromUrl = (params.get('currentUser') || '').trim();
@@ -96,8 +114,9 @@ function getCurrentUserCode() {
 
 function withCurrentUser(url) {
   const code = getCurrentUserCode();
-  if (!code) return url;
-  const u = new URL(url, window.location.origin);
+  const resolved = appPath(url);
+  if (!code) return resolved;
+  const u = new URL(resolved, window.location.origin);
   u.searchParams.set('currentUser', code);
   return u.pathname + u.search + u.hash;
 }
@@ -150,14 +169,12 @@ function renderUserChip() {
   }
 }
 
-function showAuthGate(message) {
+function showAuthGate() {
   document.body.innerHTML = `
     <div class="auth-gate">
       <div class="auth-gate__card">
         <div class="auth-gate__logo">Q</div>
         <h1>ต้องระบุรหัสพนักงาน</h1>
-        <p>${escapeHtml(message)}</p>
-        <p class="auth-gate__hint">เปิดลิงก์แบบ<br><code>?currentUser=รหัสพนักงาน</code></p>
       </div>
     </div>
   `;
@@ -166,7 +183,7 @@ function showAuthGate(message) {
 async function requireCurrentUser() {
   const code = getCurrentUserCode();
   if (!code) {
-    showAuthGate('ไม่พบ parameter currentUser — ไม่สามารถใช้งานระบบได้');
+    showAuthGate();
     throw new Error('missing currentUser');
   }
 
@@ -196,7 +213,7 @@ async function apiFetch(url, options = {}) {
     headers.set('Content-Type', 'application/json');
   }
 
-  const res = await fetch(url, { ...options, headers });
+  const res = await fetch(appPath(url), { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;

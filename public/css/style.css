@@ -925,9 +925,13 @@ body {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   text-align: center;
   box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-gate__logo {
@@ -944,27 +948,8 @@ body {
 }
 
 .auth-gate__card h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.2rem;
-}
-
-.auth-gate__card p {
   margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-}
-
-.auth-gate__hint {
-  margin-top: 1rem !important;
-  font-size: 0.82rem !important;
-}
-
-.auth-gate__hint code {
-  display: inline-block;
-  margin-top: 0.35rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--color-surface-raised);
-  border-radius: var(--radius-sm);
-  color: var(--color-primary-text);
+  font-size: 1.2rem;
+  text-align: center;
 }
 

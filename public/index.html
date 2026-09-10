@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>คิววันนี้ - Queue Close</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/css/style.css">
+  <script>window.__BASE_PATH__ = "{{BASE_PATH}}";</script>
 </head>
 <body class="app">
   <aside class="sidebar">
@@ -16,11 +17,11 @@
       </div>
     </div>
     <nav class="sidebar__nav">
-      <a href="/" class="nav-link active">
+      <a href="{{BASE_PATH}}/" class="nav-link active">
         <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         คิววันนี้
       </a>
-      <a href="/history" class="nav-link">
+      <a href="{{BASE_PATH}}/history" class="nav-link">
         <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         ประวัติ / ย้อนหลัง
       </a>
@@ -78,18 +79,18 @@
   </div>
 
   <nav class="mobile-nav">
-    <a href="/" class="nav-link active">
+    <a href="{{BASE_PATH}}/" class="nav-link active">
       <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       คิววันนี้
     </a>
-    <a href="/history" class="nav-link">
+    <a href="{{BASE_PATH}}/history" class="nav-link">
       <svg class="nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       ประวัติ
     </a>
   </nav>
 
-  <script src="/js/common.js"></script>
-  <script src="/js/edit-modal.js"></script>
-  <script src="/js/queue.js"></script>
+  <script src="{{BASE_PATH}}/js/common.js"></script>
+  <script src="{{BASE_PATH}}/js/edit-modal.js"></script>
+  <script src="{{BASE_PATH}}/js/queue.js"></script>
 </body>
 </html>
